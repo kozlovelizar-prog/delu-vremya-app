@@ -1,586 +1,1094 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>ДЕЛУ ВРЕМЯ</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<style>
-  :root {
-    --bg: #f4f4f8;
-    --surface: #ffffff;
-    --surface-2: #f0f0f5;
-    --primary: #6c5ce7;
-    --primary-soft: #e9e6ff;
-    --text: #1c1c28;
-    --text-2: #8a8a9e;
-    --danger: #ff4d4f;
-    --success: #2ecc71;
-    --radius: 16px;
-    --shadow: 0 2px 12px rgba(30, 20, 80, 0.08);
-  }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    font-size: 15px;
-    line-height: 1.35;
-    overscroll-behavior: none;
-  }
-  #app {
-    max-width: 480px;
-    margin: 0 auto;
-    min-height: 100vh;
-    position: relative;
-    background: var(--bg);
-    padding-bottom: 80px;
-  }
-  .scene { display: none; padding: 12px 16px 20px; animation: fade .18s ease; }
-  .scene.active { display: block; }
-  @keyframes fade { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: none; } }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ДЕЛУ.ВРЕМЯ</title>
+  <!-- Подключение официального SDK Telegram Mini Apps -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Шрифт Inter / Unbounded для заголовков -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-top: #F2F4FF;
+      --bg-mid: #E3E7FF;
+      --bg-bottom: #C8CEFF;
+      --primary: #635BFF;
+      --primary-hover: #5249E6;
+      --primary-light: #EEF0FF;
+      --text-main: #1E2246;
+      --text-muted: #6C7293;
+      --card-bg: rgba(255, 255, 255, 0.86);
+      --card-border: rgba(255, 255, 255, 0.95);
+      --danger: #FF5B79;
+      --success: #2ECC71;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --shadow: 0 8px 24px rgba(82, 73, 230, 0.08);
+    }
 
-  /* Header */
-  .topbar { display: flex; align-items: center; gap: 10px; padding: 8px 0 14px; }
-  .topbar .back {
-    width: 36px; height: 36px; border-radius: 12px; border: none;
-    background: var(--surface); box-shadow: var(--shadow);
-    display: grid; place-items: center; font-size: 18px; cursor: pointer;
-  }
-  .topbar h1 { font-size: 18px; margin: 0; flex: 1; }
-  .topbar .avatar {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: var(--primary-soft); color: var(--primary);
-    display: grid; place-items: center; font-weight: 700;
-  }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
 
-  /* Cards */
-  .card {
-    background: var(--surface);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 14px;
-    margin-bottom: 12px;
-  }
-  .card.soft { background: var(--primary-soft); box-shadow: none; }
-  .card h3 { margin: 0 0 8px; font-size: 16px; }
-  .muted { color: var(--text-2); font-size: 13px; }
+    body {
+      background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 55%, var(--bg-bottom) 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
 
-  /* Buttons */
-  .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    width: 100%; border: none; cursor: pointer;
-    padding: 14px 16px; border-radius: 14px;
-    font-size: 15px; font-weight: 600;
-    background: var(--primary); color: #fff;
-    transition: transform .08s ease, opacity .15s;
-  }
-  .btn:active { transform: scale(.98); }
-  .btn.secondary { background: var(--surface); color: var(--primary); box-shadow: var(--shadow); }
-  .btn.ghost { background: transparent; color: var(--primary); }
-  .btn.danger { background: var(--danger); }
-  .btn-row { display: flex; gap: 10px; }
+    /* Контейнер приложения */
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      padding-bottom: 92px; /* место под нижнее меню */
+    }
 
-  /* Inputs */
-  .input, textarea, select {
-    width: 100%; border: 1.5px solid #e2e2ec; border-radius: 12px;
-    padding: 12px 14px; font-size: 15px; background: var(--surface);
-    color: var(--text); outline: none; font-family: inherit;
-  }
-  .input:focus, textarea:focus, select:focus { border-color: var(--primary); }
-  .field { margin-bottom: 12px; }
-  .field label { display: block; font-size: 13px; color: var(--text-2); margin-bottom: 6px; }
+    /* Шапка */
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px 10px;
+    }
 
-  /* Progress */
-  .progress { height: 6px; background: #e2e2ec; border-radius: 99px; overflow: hidden; margin: 8px 0 18px; }
-  .progress > i { display: block; height: 100%; width: 0; background: var(--primary); border-radius: 99px; transition: width .3s; }
+    .brand-logo {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #2B3066;
+      text-transform: uppercase;
+    }
 
-  /* Task item */
-  .task {
-    display: flex; align-items: flex-start; gap: 12px;
-    padding: 12px; border-radius: 14px; background: var(--surface);
-    box-shadow: var(--shadow); margin-bottom: 10px; cursor: pointer;
-  }
-  .task .check {
-    width: 22px; height: 22px; border-radius: 50%;
-    border: 2px solid #d0d0de; flex-shrink: 0; margin-top: 2px;
-    display: grid; place-items: center; font-size: 12px; color: #fff;
-  }
-  .task.done .check { background: var(--success); border-color: var(--success); }
-  .task.done .title { text-decoration: line-through; color: var(--text-2); }
-  .task .title { font-weight: 600; font-size: 15px; }
-  .task .meta { font-size: 12px; color: var(--text-2); margin-top: 3px; display: flex; gap: 8px; flex-wrap: wrap; }
-  .tag { background: var(--surface-2); padding: 2px 8px; border-radius: 8px; font-size: 11px; }
+    .brand-logo span {
+      color: var(--primary);
+    }
 
-  /* Calendar */
-  .cal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
-  .cal-grid .dow { font-size: 11px; color: var(--text-2); padding: 6px 0; }
-  .cal-grid .day {
-    aspect-ratio: 1; display: grid; place-items: center; border-radius: 10px;
-    font-size: 13px; cursor: pointer; position: relative;
-  }
-  .cal-grid .day.other { color: #c8c8d6; }
-  .cal-grid .day.today { background: var(--primary); color: #fff; font-weight: 700; }
-  .cal-grid .day.has-task::after {
-    content: ""; position: absolute; bottom: 4px; width: 4px; height: 4px;
-    border-radius: 50%; background: var(--primary);
-  }
-  .cal-grid .day.today.has-task::after { background: #fff; }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
 
-  /* Sheet */
-  .sheet-backdrop {
-    position: fixed; inset: 0; background: rgba(20, 15, 50, .35);
-    opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 40;
-  }
-  .sheet-backdrop.open { opacity: 1; pointer-events: auto; }
-  .sheet {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
-    background: var(--surface); border-radius: 22px 22px 0 0;
-    padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
-    transform: translateY(100%); transition: transform .25s ease;
-    max-width: 480px; margin: 0 auto;
-  }
-  .sheet.open { transform: translateY(0); }
-  .sheet .handle { width: 40px; height: 4px; background: #ddd; border-radius: 99px; margin: 0 auto 14px; }
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-main);
+      box-shadow: var(--shadow);
+      transition: transform 0.15s ease;
+    }
 
-  /* Tabs (bottom nav) */
-  .tabbar {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
-    max-width: 480px; margin: 0 auto;
-    background: rgba(255,255,255,.92); backdrop-filter: blur(12px);
-    border-top: 1px solid #eee;
-    display: flex; justify-content: space-around;
-    padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
-  }
-  .tabbar button {
-    background: none; border: none; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; gap: 3px;
-    font-size: 10px; color: var(--text-2); padding: 4px 14px;
-  }
-  .tabbar button.active { color: var(--primary); }
-  .tabbar .ico { font-size: 20px; line-height: 1; }
+    .icon-btn:active {
+      transform: scale(0.94);
+    }
 
-  /* Utils */
-  .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  .stack > * + * { margin-top: 10px; }
-  .center { text-align: center; }
-  .emoji-lg { font-size: 44px; }
-  .pill { display: inline-flex; padding: 4px 10px; border-radius: 99px; font-size: 12px; background: var(--surface-2); }
-  .list-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f5; }
-  .list-item:last-child { border-bottom: none; }
-  .list-item .ico { width: 38px; height: 38px; border-radius: 12px; background: var(--surface-2); display: grid; place-items: center; font-size: 18px; }
-  .list-item .txt { flex: 1; }
-  .list-item .txt small { color: var(--text-2); display: block; }
-</style>
+    /* Экраны */
+    .screen {
+      display: none;
+      flex-direction: column;
+      padding: 10px 20px 24px;
+      animation: fadeIn 0.2s ease;
+      flex: 1;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .page-title {
+      font-size: 19px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: var(--text-main);
+    }
+
+    /* Стеклянные карточки */
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    /* Планшка с датой */
+    .date-pill {
+      background: #FFFFFF;
+      border-radius: 14px;
+      padding: 11px 16px;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-main);
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Карточка события / задачи */
+    .item-card {
+      background: #FFFFFF;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 14px rgba(43, 48, 102, 0.05);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+      transition: transform 0.12s ease;
+      border-left: 4px solid var(--primary);
+    }
+
+    .item-card:active {
+      transform: scale(0.98);
+    }
+
+    .item-info {
+      flex: 1;
+    }
+
+    .item-time {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .item-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      line-height: 1.35;
+    }
+
+    .item-title.done {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .item-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .action-mini-btn {
+      border: none;
+      background: #F4F5FF;
+      color: var(--text-muted);
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .action-mini-btn.danger:hover {
+      background: #FFE8EC;
+      color: var(--danger);
+    }
+
+    /* Кнопки */
+    .btn-primary {
+      width: 100%;
+      background: var(--primary);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 14px;
+      padding: 15px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(99, 91, 255, 0.3);
+      transition: background 0.15s ease, transform 0.12s ease;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--primary);
+      border: 1px solid rgba(99, 91, 255, 0.25);
+      border-radius: 14px;
+      padding: 13px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    /* Квадратные плитки быстрых действий на главной */
+    .quick-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .quick-tile {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 18px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    .quick-tile-icon {
+      font-size: 28px;
+    }
+
+    .quick-tile-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* Онбординг (Привет! Какие планы на сегодня?) */
+    .onboarding-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10px 0;
+    }
+
+    .floating-bubbles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      padding: 20px 0;
+    }
+
+    .bubble-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-greeting {
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 18px;
+      color: #1E2246;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 12px 14px;
+      border-radius: 14px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .check-badge {
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      background: #E8F8F0;
+      color: var(--success);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* Календарная сетка */
+    .calendar-card {
+      background: #FFFFFF;
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .cal-weekdays, .cal-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      gap: 4px;
+    }
+
+    .cal-weekdays div {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding-bottom: 6px;
+    }
+
+    .cal-day {
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 10px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .cal-day.muted {
+      color: #C5C9E0;
+    }
+
+    .cal-day.active {
+      background: var(--primary);
+      color: #FFFFFF;
+      font-weight: 700;
+    }
+
+    .cal-day.has-event::after {
+      content: '';
+      width: 4px;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 50%;
+      position: absolute;
+      bottom: 4px;
+    }
+
+    .cal-day.active.has-event::after {
+      background: #FFFFFF;
+    }
+
+    /* Формы ввода */
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      background: #FFFFFF;
+      border: 1px solid #DCE0F9;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--primary);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* Чекбокс задачи */
+    .task-checkbox {
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      border: 2px solid var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .task-checkbox.checked {
+      background: var(--primary);
+      color: #FFFFFF;
+    }
+
+    /* Нижняя панель навигации */
+    .bottom-nav {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 32px);
+      max-width: 440px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.98);
+      border-radius: 22px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      box-shadow: 0 10px 30px rgba(43, 48, 102, 0.12);
+      z-index: 100;
+    }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 14px;
+      transition: all 0.15s ease;
+    }
+
+    .nav-btn.active {
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .nav-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Тогл свитч в настройках */
+    .setting-item {
+      background: #FFFFFF;
+      border-radius: 14px;
+      padding: 13px 16px;
+      margin-bottom: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .badge-status {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: #E8F8F0;
+      color: var(--success);
+    }
+  </style>
 </head>
 <body>
-<div id="app">
 
-  <!-- ============ 1. ONBOARDING ============ -->
-  <section class="scene active" id="scene-onboarding">
-    <div class="center" style="padding-top:40px">
-      <div class="emoji-lg">⏰</div>
-      <h2 style="margin:10px 0 4px">ДЕЛУ ВРЕМЯ</h2>
-      <p class="muted">Планируй. Фокусируйся. Успевай.</p>
+<div class="app-container">
+  <!-- ШАПКА ПРИЛОЖЕНИЯ -->
+  <header class="app-header">
+    <div class="brand-logo" onclick="goScreen('home')" style="cursor:pointer;">
+      ДЕЛУ<span>.</span>ВРЕМЯ
     </div>
-    <div style="margin-top:32px" class="card">
-      <h3>Привет!</h3>
-      <p class="muted" style="margin:0">Помогу не забыть важное и найти время на главное. Настроим всё за минуту.</p>
+    <div class="header-actions">
+      <!-- Кнопка Онбординга (приветственный экран из макета) -->
+      <button class="icon-btn" onclick="goScreen('onboarding')" title="Приветствие">
+        ✨
+      </button>
+      <!-- Кнопка Истории (верхняя иконка справа на макете) -->
+      <button class="icon-btn" onclick="goScreen('history')" title="История">
+        🕒
+      </button>
     </div>
-    <div class="stack" style="margin-top:16px">
-      <button class="btn" data-go="scene-register">Начать</button>
-      <button class="btn secondary" data-go="scene-home">У меня уже есть аккаунт</button>
-    </div>
-  </section>
+  </header>
 
-  <!-- ============ 2. REGISTER ============ -->
-  <section class="scene" id="scene-register">
-    <div class="topbar">
-      <button class="back" data-go="scene-onboarding">←</button>
-      <h1>Регистрация</h1>
-    </div>
-    <div class="progress"><i style="width:20%"></i></div>
-    <div class="card">
-      <div class="field"><label>Имя</label><input class="input" placeholder="Как вас зовут?" /></div>
-      <div class="field"><label>Email</label><input class="input" type="email" placeholder="you@example.com" /></div>
-      <div class="field"><label>Пароль</label><input class="input" type="password" placeholder="••••••••" /></div>
-      <button class="btn" data-go="scene-welcome">Зарегистрироваться</button>
-    </div>
-    <p class="center muted">Уже есть аккаунт? <a href="#" data-go="scene-home" style="color:var(--primary)">Войти</a></p>
-  </section>
-
-  <!-- ============ 3. WELCOME / PLANS ============ -->
-  <section class="scene" id="scene-welcome">
-    <div class="topbar">
-      <button class="back" data-go="scene-register">←</button>
-      <h1>Добро пожаловать</h1>
-    </div>
-    <div class="card soft">
-      <h3>Привет! Какие планы на сегодня?</h3>
-      <p class="muted" style="margin:0">Выберите, с чего начнём.</p>
-    </div>
-    <div class="stack" style="margin-top:16px">
-      <button class="btn secondary" data-go="scene-new-task">➕ Записать новую задачу</button>
-      <button class="btn secondary" data-go="scene-calendar">📅 Посмотреть календарь</button>
-      <button class="btn" data-go="scene-home">Перейти на главную</button>
-    </div>
-  </section>
-
-  <!-- ============ 4. NEW TASK ============ -->
-  <section class="scene" id="scene-new-task">
-    <div class="topbar">
-      <button class="back" data-go="scene-welcome">←</button>
-      <h1>Новая задача</h1>
-    </div>
-    <div class="card">
-      <div class="field"><label>Название</label><input class="input" id="nt-title" placeholder="Что нужно сделать?" /></div>
-      <div class="field"><label>Описание</label><textarea rows="3" id="nt-desc" placeholder="Детали (необязательно)"></textarea></div>
-      <div class="row">
-        <div class="field" style="flex:1"><label>Дата</label><input class="input" type="date" id="nt-date" /></div>
-        <div class="field" style="flex:1"><label>Время</label><input class="input" type="time" id="nt-time" /></div>
+  <!-- 1. ЭКРАН ОНБОРДИНГА («Привет! Какие планы на сегодня?») -->
+  <section id="screen-onboarding" class="screen">
+    <div class="onboarding-box">
+      <div class="floating-bubbles">
+        <div class="bubble-icon">📅</div>
+        <div class="bubble-icon">🔔</div>
+        <div class="bubble-icon">✅</div>
+        <div class="bubble-icon">💬</div>
+        <div class="bubble-icon">⚡</div>
       </div>
-      <div class="field"><label>Приоритет</label>
-        <select class="input" id="nt-prio">
-          <option>Низкий</option><option selected>Средний</option><option>Высокий</option>
-        </select>
-      </div>
-      <button class="btn" id="nt-save">Сохранить задачу</button>
-    </div>
-  </section>
 
-  <!-- ============ 5. HOME ============ -->
-  <section class="scene" id="scene-home">
-    <div class="topbar">
-      <h1>Твой план на сегодня</h1>
-      <div class="avatar">В</div>
-    </div>
-    <div class="card soft">
-      <div class="row">
-        <div>
-          <div class="muted">Сегодня, 18 октября</div>
-          <h3 style="margin:4px 0 0" id="home-date">Добрый день!</h3>
+      <div class="glass-card">
+        <div class="hero-greeting" id="onboarding-title">
+          Привет!<br>Какие планы на сегодня?
         </div>
-        <div class="emoji-lg">📋</div>
+
+        <div class="check-row">
+          <div class="check-badge">✓</div>
+          <div>Отправляй голосовые или текст прямо в бота — NLP-модуль сам выделит дату и время</div>
+        </div>
+        <div class="check-row">
+          <div class="check-badge">✓</div>
+          <div>Синхронизируй расписание с Google Календарём в один клик</div>
+        </div>
+        <div class="check-row">
+          <div class="check-badge">✓</div>
+          <div>Управляй регулярными событиями и списком задач</div>
+        </div>
+
+        <button class="btn-primary" onclick="goScreen('home')">
+          Записать новые задачи
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. ГЛАВНЫЙ ЭКРАН («Твой план на сегодня») -->
+  <section id="screen-home" class="screen active">
+    <div class="page-title">Твой план на сегодня</div>
+
+    <div class="date-pill">
+      <span>Сегодня, 16 октября</span>
+      <span style="font-size:12px; color:var(--primary); cursor:pointer;" onclick="toggleEmptyHome()">
+        Сменить вид
+      </span>
+    </div>
+
+    <!-- Заполненный список событий на сегодня -->
+    <div id="home-events-list"></div>
+
+    <!-- Пустое состояние («У тебя пока нет планов на этот день!») -->
+    <div id="home-empty-state" class="glass-card" style="display:none; text-align:center; padding: 24px 16px;">
+      <div style="font-size:15px; font-weight:600; margin-bottom:14px;">
+        У тебя пока нет планов на этот день!
+      </div>
+      <div class="quick-grid">
+        <div class="quick-tile" onclick="openEventForm()">
+          <div class="quick-tile-icon">🌱</div>
+          <div class="quick-tile-label">Добавить событие</div>
+        </div>
+        <div class="quick-tile" onclick="goScreen('tasks')">
+          <div class="quick-tile-icon">📝</div>
+          <div class="quick-tile-label">Мои задачи</div>
+        </div>
       </div>
     </div>
 
-    <h3 style="margin:18px 0 10px">Задачи</h3>
-    <div id="task-list"></div>
-
-    <div class="btn-row" style="margin-top:14px">
-      <button class="btn secondary" data-go="scene-new-task">➕ Задача</button>
-      <button class="btn secondary" data-go="scene-calendar">📅 Календарь</button>
-    </div>
-  </section>
-
-  <!-- ============ 6. CALENDAR ============ -->
-  <section class="scene" id="scene-calendar">
-    <div class="topbar">
-      <button class="back" data-go="scene-home">←</button>
-      <h1>Календарь</h1>
-    </div>
-    <div class="card">
-      <div class="cal-head">
-        <button class="btn ghost" id="cal-prev" style="width:auto;padding:6px 10px">‹</button>
-        <strong id="cal-month">Октябрь 2025</strong>
-        <button class="btn ghost" id="cal-next" style="width:auto;padding:6px 10px">›</button>
+    <!-- Быстрые плитки внизу главной -->
+    <div class="quick-grid" id="home-quick-tiles">
+      <div class="quick-tile" onclick="openEventForm()">
+        <div class="quick-tile-icon">➕</div>
+        <div class="quick-tile-label">Новое событие</div>
       </div>
-      <div class="cal-grid" id="cal-dow">
-        <div class="dow">Пн</div><div class="dow">Вт</div><div class="dow">Ср</div>
-        <div class="dow">Чт</div><div class="dow">Пт</div><div class="dow">Сб</div><div class="dow">Вс</div>
+      <div class="quick-tile" onclick="goScreen('calendar')">
+        <div class="quick-tile-icon">📅</div>
+        <div class="quick-tile-label">Календарь</div>
       </div>
-      <div class="cal-grid" id="cal-days" style="margin-top:4px"></div>
-    </div>
-    <button class="btn" data-go="scene-new-task">➕ Добавить задачу</button>
-  </section>
-
-  <!-- ============ 7. TASK DETAIL (bottom sheet) ============ -->
-  <div class="sheet-backdrop" id="sheet-bg"></div>
-  <div class="sheet" id="sheet-task">
-    <div class="handle"></div>
-    <div class="row" style="margin-bottom:10px">
-      <h3 id="st-title" style="margin:0">Задача</h3>
-      <button class="btn ghost" id="st-close" style="width:auto;padding:6px">✕</button>
-    </div>
-    <p class="muted" id="st-desc">Описание</p>
-    <div class="row" style="margin:14px 0">
-      <span class="pill" id="st-date">📅 Сегодня</span>
-      <span class="pill" id="st-prio">⚡ Средний</span>
-    </div>
-    <div class="stack">
-      <button class="btn" id="st-done">✓ Отметить выполненной</button>
-      <button class="btn secondary" id="st-edit">✎ Редактировать</button>
-      <button class="btn ghost" id="st-delete" style="color:var(--danger)">Удалить</button>
-    </div>
-  </div>
-
-  <!-- ============ 8. PROFILE ============ -->
-  <section class="scene" id="scene-profile">
-    <div class="topbar"><h1>Мой профиль</h1></div>
-    <div class="card center">
-      <div class="avatar" style="width:72px;height:72px;font-size:26px;margin:0 auto 10px">В</div>
-      <h3 style="margin:0">Пользователь</h3>
-      <div class="muted">user@example.com</div>
-    </div>
-    <div class="card">
-      <div class="list-item"><div class="ico">🔔</div><div class="txt">Уведомления<small>Напоминания о задачах</small></div><button class="btn ghost" style="width:auto;padding:6px">Вкл</button></div>
-      <div class="list-item"><div class="ico">🎨</div><div class="txt">Тема<small>Светлая</small></div><button class="btn ghost" style="width:auto;padding:6px">Изменить</button></div>
-      <div class="list-item"><div class="ico">🌐</div><div class="txt">Язык<small>Русский</small></div><button class="btn ghost" style="width:auto;padding:6px">Изменить</button></div>
-      <div class="list-item"><div class="ico">🔒</div><div class="txt">Конфиденциальность</div><button class="btn ghost" style="width:auto;padding:6px">›</button></div>
-    </div>
-    <button class="btn danger" data-go="scene-onboarding">Выйти</button>
-  </section>
-
-  <!-- ============ 9. STATS ============ -->
-  <section class="scene" id="scene-stats">
-    <div class="topbar"><h1>Статистика</h1></div>
-    <div class="card soft">
-      <div class="muted">Выполнено сегодня</div>
-      <h2 style="margin:6px 0 0" id="stats-done">0 / 0</h2>
-    </div>
-    <div class="card">
-      <h3>За последние 7 дней</h3>
-      <div id="stats-bars" style="display:flex;gap:8px;align-items:flex-end;height:120px;margin-top:10px"></div>
     </div>
   </section>
 
-  <!-- Bottom tabbar -->
-  <nav class="tabbar" id="tabbar">
-    <button data-go="scene-home" data-tab="home"><span class="ico">🏠</span>Главная</button>
-    <button data-go="scene-calendar" data-tab="calendar"><span class="ico">📅</span>Календарь</button>
-    <button data-go="scene-stats" data-tab="stats"><span class="ico">📊</span>Статистика</button>
-    <button data-go="scene-profile" data-tab="profile"><span class="ico">👤</span>Профиль</button>
+  <!-- 3. ЭКРАН КАЛЕНДАРЯ -->
+  <section id="screen-calendar" class="screen">
+    <div class="calendar-card">
+      <div class="cal-header">
+        <span>Октябрь 2026</span>
+        <span style="color:var(--primary); font-size:13px;">Google Sync ●</span>
+      </div>
+      <div class="cal-weekdays">
+        <div>ПН</div><div>ВТ</div><div>СР</div><div>ЧТ</div><div>ПТ</div><div>СБ</div><div>ВС</div>
+      </div>
+      <div class="cal-days" id="calendar-grid"></div>
+    </div>
+
+    <div class="date-pill">
+      <span id="selected-cal-date">Сегодня, 16 октября</span>
+      <button class="action-mini-btn" onclick="openEventForm()" title="Добавить">+</button>
+    </div>
+
+    <div id="calendar-day-events"></div>
+
+    <div class="date-pill" style="margin-top:6px; opacity:0.85;">
+      <span>Завтра, 17 октября</span>
+    </div>
+    <div class="item-card" onclick="openEventDetails(99)">
+      <div class="item-info">
+        <div class="item-time">11:00 – 12:00 <span>• Каждую субботу</span></div>
+        <div class="item-title">Созвон команды разработки</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. ЭКРАН «МОИ ЗАДАЧИ» -->
+  <section id="screen-tasks" class="screen">
+    <div class="page-title">Мои задачи</div>
+
+    <div class="glass-card" style="padding: 12px;">
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="new-task-input" class="form-input" placeholder="Например: Сделать ревью кода...">
+        <button class="btn-primary" style="width:auto; margin-top:0; padding:0 18px;" onclick="addNewTask()">+</button>
+      </div>
+    </div>
+
+    <div id="tasks-container"></div>
+
+    <button class="btn-primary" onclick="openEventForm()">
+      + Добавить событие с датой
+    </button>
+  </section>
+
+  <!-- 5. ЭКРАН СОЗДАНИЯ / РЕДАКТИРОВАНИЯ СОБЫТИЯ (с RRULE повтором) -->
+  <section id="screen-event-form" class="screen">
+    <div class="page-title" id="form-screen-title">Новое регулярное событие</div>
+
+    <div class="glass-card">
+      <div class="form-group">
+        <label class="form-label">Название события</label>
+        <input type="text" id="ev-title" class="form-input" placeholder="Встретиться с дизайнером" value="Встретиться с дизайнером">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Дата</label>
+          <input type="date" id="ev-date" class="form-input" value="2026-10-16">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Повтор (RRULE)</label>
+          <select id="ev-rrule" class="form-select">
+            <option value="Однократно">Не повторять</option>
+            <option value="Каждый день">Каждый день</option>
+            <option value="Каждую неделю" selected>Каждую неделю</option>
+            <option value="Каждый месяц">Каждый месяц</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Начало</label>
+          <input type="time" id="ev-start" class="form-input" value="15:00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Окончание</label>
+          <input type="time" id="ev-end" class="form-input" value="16:00">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Заметка / Ссылка</label>
+        <textarea id="ev-desc" class="form-textarea" rows="2" placeholder="Обсудить экраны User Flow для мини-аппа">Обсудить экраны User Flow для мини-аппа</textarea>
+      </div>
+
+      <button class="btn-primary" onclick="saveEvent()">Сохранить</button>
+      <button class="btn-secondary" onclick="goScreen('home')">Отмена</button>
+    </div>
+  </section>
+
+  <!-- 6. ЭКРАН КАРТОЧКИ СОБЫТИЯ («Карточка события») -->
+  <section id="screen-event-detail" class="screen">
+    <div class="page-title">Карточка события</div>
+
+    <div class="glass-card">
+      <div class="item-time" id="det-time">15:00 – 16:00 • Каждую неделю</div>
+      <h3 style="font-size:18px; font-weight:700; margin: 6px 0 12px;" id="det-title">
+        Встретиться с дизайнером
+      </h3>
+
+      <div class="setting-item">
+        <span style="color:var(--text-muted);">Дата</span>
+        <span id="det-date" style="font-weight:600;">16 октября 2026</span>
+      </div>
+      <div class="setting-item">
+        <span style="color:var(--text-muted);">Календарь</span>
+        <span class="badge-status">Google Calendar</span>
+      </div>
+      <div class="setting-item" style="flex-direction:column; align-items:flex-start; gap:4px;">
+        <span style="color:var(--text-muted); font-size:12px;">Описание</span>
+        <div id="det-desc" style="font-size:14px;">Обсудить экраны User Flow для мини-аппа</div>
+      </div>
+
+      <button class="btn-primary" onclick="openEventForm(true)">Редактировать событие</button>
+      <button class="btn-secondary" style="color:var(--danger); border-color:rgba(255,91,121,0.3);" onclick="deleteCurrentEvent()">
+        Удалить событие
+      </button>
+    </div>
+  </section>
+
+  <!-- 7. ЭКРАН «ИСТОРИЯ» -->
+  <section id="screen-history" class="screen">
+    <div class="page-title">История</div>
+
+    <div class="glass-card">
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">
+        Распознанные запросы из чата и выполненные действия:
+      </div>
+
+      <div class="item-card">
+        <div class="item-info">
+          <div class="item-time">Сегодня, 14:12 • NLP Модуль</div>
+          <div class="item-title">«Поставь встречу с дизайнером в пятницу в 15:00»</div>
+          <div class="item-sub">Создано событие • 16 окт, 15:00</div>
+        </div>
+      </div>
+
+      <div class="item-card">
+        <div class="item-info">
+          <div class="item-time">Сегодня, 11:05 • Задачи</div>
+          <div class="item-title">«Купить кофе по дороге в корпус»</div>
+          <div class="item-sub">Отмечено выполненным ✓</div>
+        </div>
+      </div>
+
+      <div class="item-card">
+        <div class="item-info">
+          <div class="item-time">Вчера, 19:40 • Google Sync</div>
+          <div class="item-title">«Пары каждый вторник в 10:00»</div>
+          <div class="item-sub">Добавлено правило RRULE: WEEKLY</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. ЭКРАН НАСТРОЕК («Мой профиль и календарь») -->
+  <section id="screen-settings" class="screen">
+    <div class="page-title">Настройки</div>
+
+    <div class="glass-card">
+      <div class="setting-item">
+        <span>Google Календарь</span>
+        <span class="badge-status" id="gcal-status" onclick="toggleGcal()" style="cursor:pointer;">Подключен ✓</span>
+      </div>
+      <div class="setting-item">
+        <span>Утренний дайджест планов</span>
+        <span style="font-weight:600; color:var(--primary);">09:00</span>
+      </div>
+      <div class="setting-item">
+        <span>Напоминания за</span>
+        <span style="font-weight:600; color:var(--primary);">15 минут</span>
+      </div>
+      <div class="setting-item">
+        <span>Часовой пояс</span>
+        <span style="color:var(--text-muted);">UTC+3 (СПб / Москва)</span>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="sendDataToBot()">
+      Синхронизировать с ботом
+    </button>
+  </section>
+
+  <!-- НИЖНЯЯ НАВИГАЦИЯ (как на макете) -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="nav-home" onclick="goScreen('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1V9.5z"/></svg>
+      <span>Главная</span>
+    </button>
+    <button class="nav-btn" id="nav-calendar" onclick="goScreen('calendar')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Календарь</span>
+    </button>
+    <button class="nav-btn" id="nav-tasks" onclick="goScreen('tasks')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span>Задачи</span>
+    </button>
+    <button class="nav-btn" id="nav-settings" onclick="goScreen('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Профиль</span>
+    </button>
   </nav>
-
 </div>
 
 <script>
-/* ======================= State ======================= */
-const state = {
-  tasks: [
-    { id: 1, title: 'Проверить почту', desc: 'Ответить на важные письма', date: '2025-10-18', time: '09:00', prio: 'Средний', done: true },
-    { id: 2, title: 'Созвон с командой', desc: 'Обсудить спринт', date: '2025-10-18', time: '11:00', prio: 'Высокий', done: false },
-    { id: 3, title: 'Обед', desc: '', date: '2025-10-18', time: '13:00', prio: 'Низкий', done: false },
-    { id: 4, title: 'Пробежка', desc: '5 км в парке', date: '2025-10-18', time: '19:00', prio: 'Средний', done: false }
-  ],
-  currentTaskId: null,
-  calendarDate: new Date(2025, 9, 1) // Oct 2025
-};
-
-/* ======================= Router ======================= */
-const scenes = document.querySelectorAll('.scene');
-const tabbar = document.getElementById('tabbar');
-const tabbarScenes = ['scene-home','scene-calendar','scene-stats','scene-profile'];
-
-function go(id) {
-  scenes.forEach(s => s.classList.toggle('active', s.id === id));
-  const isTab = tabbarScenes.includes(id);
-  tabbar.style.display = isTab ? 'flex' : 'none';
-  document.querySelectorAll('#tabbar button').forEach(b => {
-    b.classList.toggle('active', b.dataset.go === id);
-  });
-  window.scrollTo(0,0);
-  if (id === 'scene-home') renderTasks();
-  if (id === 'scene-calendar') renderCalendar();
-  if (id === 'scene-stats') renderStats();
-}
-
-document.addEventListener('click', (e) => {
-  const el = e.target.closest('[data-go]');
-  if (el) { e.preventDefault(); go(el.dataset.go); }
-});
-
-/* ======================= Tasks ======================= */
-const taskList = document.getElementById('task-list');
-
-function todayStr() {
-  const d = new Date();
-  return d.toISOString().slice(0,10);
-}
-
-function renderTasks() {
-  const today = todayStr();
-  const todays = state.tasks.filter(t => t.date === today || !t.date);
-  if (!todays.length) {
-    taskList.innerHTML = `<div class="card center muted">Пока пусто. Добавьте первую задачу ✨</div>`;
-    return;
+  // Инициализация Telegram WebApp API
+  const tg = window.Telegram?.WebApp;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    tg.setHeaderColor('#F2F4FF');
+    tg.setBackgroundColor('#E3E7FF');
   }
-  taskList.innerHTML = todays.map(t => `
-    <div class="task ${t.done ? 'done' : ''}" data-id="${t.id}">
-      <div class="check">${t.done ? '✓' : ''}</div>
-      <div style="flex:1">
-        <div class="title">${escapeHtml(t.title)}</div>
-        <div class="meta">
-          ${t.time ? `<span class="tag">🕐 ${t.time}</span>` : ''}
-          <span class="tag">${prioIcon(t.prio)} ${t.prio}</span>
+
+  // Начальные события (соответствуют макету)
+  let events = [
+    {
+      id: 1,
+      title: 'Встретиться с дизайнером',
+      date: '16 октября',
+      start: '15:00',
+      end: '16:00',
+      rrule: 'Каждую неделю',
+      desc: 'Обсудить экраны User Flow для мини-аппа'
+    },
+    {
+      id: 2,
+      title: 'Защита модуля NLP и Календаря',
+      date: '16 октября',
+      start: '18:30',
+      end: '19:30',
+      rrule: 'Однократно',
+      desc: 'Синхронизация веток в репозитории deal.time'
+    }
+  ];
+
+  // Начальные задачи
+  let tasks = [
+    { id: 101, text: 'Проверить пул-реквест Ани по NLP модулю', done: true },
+    { id: 102, text: 'Обновить ключи Google Calendar у Жени', done: false },
+    { id: 103, text: 'Подготовить верстку Telegram Mini App', done: false }
+  ];
+
+  let currentEventId = 1;
+  let isHomeEmpty = false;
+
+  // Переключение экранов
+  function goScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById('screen-' + screenId);
+    if (target) target.classList.add('active');
+
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    const navBtn = document.getElementById('nav-' + screenId);
+    if (navBtn) navBtn.classList.add('active');
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Отрисовка событий на главной и в календаре
+  function renderEvents() {
+    const homeList = document.getElementById('home-events-list');
+    const calList = document.getElementById('calendar-day-events');
+
+    if (events.length === 0 || isHomeEmpty) {
+      homeList.style.display = 'none';
+      document.getElementById('home-empty-state').style.display = 'block';
+      document.getElementById('home-quick-tiles').style.display = 'none';
+    } else {
+      homeList.style.display = 'block';
+      document.getElementById('home-empty-state').style.display = 'none';
+      document.getElementById('home-quick-tiles').style.display = 'grid';
+    }
+
+    const html = events.map(ev => `
+      <div class="item-card" onclick="openEventDetails(${ev.id})">
+        <div class="item-info">
+          <div class="item-time">${ev.start} – ${ev.end} <span>• ${ev.rrule}</span></div>
+          <div class="item-title">${ev.title}</div>
+          <div class="item-sub">${ev.desc}</div>
         </div>
+        <button class="action-mini-btn danger" onclick="event.stopPropagation(); removeEvent(${ev.id})">✕</button>
       </div>
-    </div>
-  `).join('');
+    `).join('');
 
-  taskList.querySelectorAll('.task').forEach(el => {
-    el.addEventListener('click', (ev) => {
-      if (ev.target.closest('.check')) {
-        const id = +el.dataset.id;
-        const t = state.tasks.find(x => x.id === id);
-        t.done = !t.done;
-        renderTasks();
-        if (navigator.vibrate) navigator.vibrate(8);
-      } else {
-        openTask(+el.dataset.id);
-      }
-    });
-  });
-}
-
-function prioIcon(p) {
-  return p === 'Высокий' ? '🔴' : p === 'Средний' ? '🟡' : '🟢';
-}
-
-function escapeHtml(s){return s.replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));}
-
-/* ======================= New task ======================= */
-document.getElementById('nt-save').addEventListener('click', () => {
-  const title = document.getElementById('nt-title').value.trim();
-  if (!title) return alert('Введите название задачи');
-  const date = document.getElementById('nt-date').value || todayStr();
-  state.tasks.push({
-    id: Date.now(),
-    title,
-    desc: document.getElementById('nt-desc').value.trim(),
-    date,
-    time: document.getElementById('nt-time').value,
-    prio: document.getElementById('nt-prio').value,
-    done: false
-  });
-  document.getElementById('nt-title').value = '';
-  document.getElementById('nt-desc').value = '';
-  document.getElementById('nt-date').value = '';
-  document.getElementById('nt-time').value = '';
-  go('scene-home');
-});
-
-/* ======================= Calendar ======================= */
-const calDays = document.getElementById('cal-days');
-const calMonth = document.getElementById('cal-month');
-
-function renderCalendar() {
-  const d = state.calendarDate;
-  const year = d.getFullYear(), month = d.getMonth();
-  calMonth.textContent = d.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
-
-  const first = new Date(year, month, 1);
-  let startDow = (first.getDay() + 6) % 7; // Mon=0
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const prevDays = new Date(year, month, 0).getDate();
-
-  const today = new Date();
-  const isCurrent = today.getFullYear()===year && today.getMonth()===month;
-
-  let html = '';
-  for (let i = startDow - 1; i >= 0; i--) {
-    html += `<div class="day other">${prevDays - i}</div>`;
+    homeList.innerHTML = html;
+    calList.innerHTML = html || '<div class="glass-card" style="text-align:center; color:var(--text-muted);">Нет событий на выбранный день</div>';
   }
-  for (let day = 1; day <= daysInMonth; day++) {
-    const isToday = isCurrent && today.getDate() === day;
-    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    const hasTask = state.tasks.some(t => t.date === dateStr);
-    html += `<div class="day ${isToday?'today':''} ${hasTask?'has-task':''}" data-date="${dateStr}">${day}</div>`;
+
+  function toggleEmptyHome() {
+    isHomeEmpty = !isHomeEmpty;
+    renderEvents();
   }
-  calDays.innerHTML = html;
 
-  calDays.querySelectorAll('.day[data-date]').forEach(el => {
-    el.addEventListener('click', () => {
-      const ds = el.dataset.date;
-      const tasks = state.tasks.filter(t => t.date === ds);
-      if (tasks.length) openTask(tasks[0].id);
+  function removeEvent(id) {
+    events = events.filter(e => e.id !== id);
+    renderEvents();
+  }
+
+  // Открытие деталей события
+  function openEventDetails(id) {
+    const ev = events.find(e => e.id === id) || {
+      id: 99,
+      title: 'Созвон команды разработки',
+      date: '17 октября',
+      start: '11:00',
+      end: '12:00',
+      rrule: 'Каждую субботу',
+      desc: 'Еженедельная сверка по задачам проекта'
+    };
+    currentEventId = ev.id;
+    document.getElementById('det-title').innerText = ev.title;
+    document.getElementById('det-time').innerText = `${ev.start} – ${ev.end} • ${ev.rrule}`;
+    document.getElementById('det-date').innerText = `${ev.date} 2026`;
+    document.getElementById('det-desc').innerText = ev.desc;
+    goScreen('event-detail');
+  }
+
+  function deleteCurrentEvent() {
+    removeEvent(currentEventId);
+    goScreen('home');
+  }
+
+  // Открытие формы создания/редактирования
+  function openEventForm(isEdit = false) {
+    document.getElementById('form-screen-title').innerText = isEdit
+      ? 'Редактирование события'
+      : 'Новое регулярное событие';
+    goScreen('event-form');
+  }
+
+  function saveEvent() {
+    const title = document.getElementById('ev-title').value.trim() || 'Новое событие';
+    const start = document.getElementById('ev-start').value || '12:00';
+    const end = document.getElementById('ev-end').value || '13:00';
+    const rrule = document.getElementById('ev-rrule').value;
+    const desc = document.getElementById('ev-desc').value.trim();
+
+    events.unshift({
+      id: Date.now(),
+      title,
+      date: '16 октября',
+      start,
+      end,
+      rrule,
+      desc
     });
-  });
-}
 
-document.getElementById('cal-prev').onclick = () => {
-  state.calendarDate = new Date(state.calendarDate.getFullYear(), state.calendarDate.getMonth()-1, 1);
-  renderCalendar();
-};
-document.getElementById('cal-next').onclick = () => {
-  state.calendarDate = new Date(state.calendarDate.getFullYear(), state.calendarDate.getMonth()+1, 1);
-  renderCalendar();
-};
+    isHomeEmpty = false;
+    renderEvents();
+    goScreen('home');
+  }
 
-/* ======================= Sheet ======================= */
-const sheet = document.getElementById('sheet-task');
-const bg = document.getElementById('sheet-bg');
-function openSheet(){ sheet.classList.add('open'); bg.classList.add('open'); }
-function closeSheet(){ sheet.classList.remove('open'); bg.classList.remove('open'); }
-document.getElementById('st-close').onclick = closeSheet;
-bg.onclick = closeSheet;
-
-function openTask(id) {
-  const t = state.tasks.find(x => x.id === id);
-  if (!t) return;
-  state.currentTaskId = id;
-  document.getElementById('st-title').textContent = t.title;
-  document.getElementById('st-desc').textContent = t.desc || 'Без описания';
-  document.getElementById('st-date').textContent = '📅 ' + (t.date || 'Без даты') + (t.time ? ' · ' + t.time : '');
-  document.getElementById('st-prio').textContent = prioIcon(t.prio) + ' ' + t.prio;
-  openSheet();
-}
-
-document.getElementById('st-done').onclick = () => {
-  const t = state.tasks.find(x => x.id === state.currentTaskId);
-  if (t) { t.done = true; renderTasks(); }
-  closeSheet();
-};
-document.getElementById('st-delete').onclick = () => {
-  state.tasks = state.tasks.filter(x => x.id !== state.currentTaskId);
-  renderTasks(); closeSheet();
-};
-document.getElementById('st-edit').onclick = () => {
-  const t = state.tasks.find(x => x.id === state.currentTaskId);
-  if (!t) return;
-  document.getElementById('nt-title').value = t.title;
-  document.getElementById('nt-desc').value = t.desc;
-  document.getElementById('nt-date').value = t.date;
-  document.getElementById('nt-time').value = t.time;
-  document.getElementById('nt-prio').value = t.prio;
-  state.tasks = state.tasks.filter(x => x.id !== state.currentTaskId);
-  closeSheet();
-  go('scene-new-task');
-};
-
-/* ======================= Stats ======================= */
-function renderStats() {
-  const total = state.tasks.length;
-  const done = state.tasks.filter(t => t.done).length;
-  document.getElementById('stats-done').textContent = `${done} / ${total}`;
-  const bars = document.getElementById('stats-bars');
-  const vals = [3,5,2,6,4,7,done];
-  const max = Math.max(...vals, 1);
-  bars.innerHTML = vals.map((v,i) => `
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
-      <div style="width:100%;background:var(--primary-soft);border-radius:8px;height:${(v/max)*100}px;position:relative">
-        <div style="position:absolute;bottom:0;left:0;right:0;height:100%;background:var(--primary);border-radius:8px;opacity:${i===vals.length-1?1:.55}"></div>
+  // Рендер списка задач
+  function renderTasks() {
+    const container = document.getElementById('tasks-container');
+    container.innerHTML = tasks.map(t => `
+      <div class="item-card" onclick="toggleTask(${t.id})">
+        <div class="task-checkbox ${t.done ? 'checked' : ''}">
+          ${t.done ? '✓' : ''}
+        </div>
+        <div class="item-info">
+          <div class="item-title ${t.done ? 'done' : ''}">${t.text}</div>
+        </div>
+        <button class="action-mini-btn danger" onclick="event.stopPropagation(); deleteTask(${t.id})">✕</button>
       </div>
-      <small class="muted">${['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][i]}</small>
-    </div>
-  `).join('');
-}
+    `).join('');
+  }
 
-/* ======================= Init ======================= */
-document.getElementById('nt-date').value = todayStr();
-document.getElementById('home-date').textContent = new Date().toLocaleDateString('ru-RU', { weekday:'long', day:'numeric', month:'long' });
+  function toggleTask(id) {
+    tasks = tasks.map(t => t.id === id ? { ...t, done: !t.done } : t);
+    renderTasks();
+  }
 
-// Telegram Mini App
-if (window.Telegram?.WebApp) {
-  const tg = window.Telegram.WebApp;
-  tg.ready();
-  tg.expand();
-  try { tg.setHeaderColor('#f4f4f8'); tg.setBackgroundColor('#f4f4f8'); } catch(e){}
-}
+  function deleteTask(id) {
+    tasks = tasks.filter(t => t.id !== id);
+    renderTasks();
+  }
 
-go('scene-onboarding');
+  function addNewTask() {
+    const inp = document.getElementById('new-task-input');
+    const val = inp.value.trim();
+    if (!val) return;
+    tasks.unshift({ id: Date.now(), text: val, done: false });
+    inp.value = '';
+    renderTasks();
+  }
+
+  // Генерация сетки календаря
+  function buildCalendar() {
+    const grid = document.getElementById('calendar-grid');
+    let html = '';
+    // Пустые дни предыдущего месяца
+    for (let i = 28; i <= 30; i++) {
+      html += `<div class="cal-day muted">${i}</div>`;
+    }
+    for (let d = 1; d <= 31; d++) {
+      const isToday = d === 16;
+      const hasEv = [8, 12, 16, 17, 23, 28].includes(d);
+      html += `<div class="cal-day ${isToday ? 'active' : ''} ${hasEv ? 'has-event' : ''}" onclick="selectCalDay(this, ${d})">${d}</div>`;
+    }
+    grid.innerHTML = html;
+  }
+
+  function selectCalDay(el, day) {
+    document.querySelectorAll('.cal-day').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('selected-cal-date').innerText = `${day} октября`;
+  }
+
+  function toggleGcal() {
+    const el = document.getElementById('gcal-status');
+    if (el.innerText.includes('Подключен')) {
+      el.innerText = 'Отключен';
+      el.style.background = '#FFE8EC';
+      el.style.color = '#FF5B79';
+    } else {
+      el.innerText = 'Подключен ✓';
+      el.style.background = '#E8F8F0';
+      el.style.color = '#2ECC71';
+    }
+  }
+
+  // Отправка данных обратно в Telegram-бота (если запущено внутри ТГ)
+  function sendDataToBot() {
+    const payload = JSON.stringify({ eventsCount: events.length, tasksCount: tasks.length });
+    if (tg && tg.sendData) {
+      tg.sendData(payload);
+    } else {
+      alert('Синхронизировано! Событий: ' + events.length + ', Задач: ' + tasks.length);
+    }
+  }
+
+  // Старт приложения
+  buildCalendar();
+  renderEvents();
+  renderTasks();
 </script>
 </body>
 </html>
