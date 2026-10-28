@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>ДЕЛУ ВРЕМЯ</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: #f4f4f8;
+    --surface: #ffffff;
+    --surface-2: #f0f0f5;
+    --primary: #6c5ce7;
+    --primary-soft: #e9e6ff;
+    --text: #1c1c28;
+    --text-2: #8a8a9e;
+    --danger: #ff4d4f;
+    --success: #2ecc71;
+    --radius: 16px;
+    --shadow: 0 2px 12px rgba(30, 20, 80, 0.08);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.35;
+    overscroll-behavior: none;
+  }
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    position: relative;
+    background: var(--bg);
+    padding-bottom: 80px;
+  }
+  .scene { display: none; padding: 12px 16px 20px; animation: fade .18s ease; }
+  .scene.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: none; } }
+
+  /* Header */
+  .topbar { display: flex; align-items: center; gap: 10px; padding: 8px 0 14px; }
+  .topbar .back {
+    width: 36px; height: 36px; border-radius: 12px; border: none;
+    background: var(--surface); box-shadow: var(--shadow);
+    display: grid; place-items: center; font-size: 18px; cursor: pointer;
+  }
+  .topbar h1 { font-size: 18px; margin: 0; flex: 1; }
+  .topbar .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--primary-soft); color: var(--primary);
+    display: grid; place-items: center; font-weight: 700;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .card.soft { background: var(--primary-soft); box-shadow: none; }
+  .card h3 { margin: 0 0 8px; font-size: 16px; }
+  .muted { color: var(--text-2); font-size: 13px; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; border: none; cursor: pointer;
+    padding: 14px 16px; border-radius: 14px;
+    font-size: 15px; font-weight: 600;
+    background: var(--primary); color: #fff;
+    transition: transform .08s ease, opacity .15s;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn.secondary { background: var(--surface); color: var(--primary); box-shadow: var(--shadow); }
+  .btn.ghost { background: transparent; color: var(--primary); }
+  .btn.danger { background: var(--danger); }
+  .btn-row { display: flex; gap: 10px; }
+
+  /* Inputs */
+  .input, textarea, select {
+    width: 100%; border: 1.5px solid #e2e2ec; border-radius: 12px;
+    padding: 12px 14px; font-size: 15px; background: var(--surface);
+    color: var(--text); outline: none; font-family: inherit;
+  }
+  .input:focus, textarea:focus, select:focus { border-color: var(--primary); }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 13px; color: var(--text-2); margin-bottom: 6px; }
+
+  /* Progress */
+  .progress { height: 6px; background: #e2e2ec; border-radius: 99px; overflow: hidden; margin: 8px 0 18px; }
+  .progress > i { display: block; height: 100%; width: 0; background: var(--primary); border-radius: 99px; transition: width .3s; }
+
+  /* Task item */
+  .task {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px; border-radius: 14px; background: var(--surface);
+    box-shadow: var(--shadow); margin-bottom: 10px; cursor: pointer;
+  }
+  .task .check {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid #d0d0de; flex-shrink: 0; margin-top: 2px;
+    display: grid; place-items: center; font-size: 12px; color: #fff;
+  }
+  .task.done .check { background: var(--success); border-color: var(--success); }
+  .task.done .title { text-decoration: line-through; color: var(--text-2); }
+  .task .title { font-weight: 600; font-size: 15px; }
+  .task .meta { font-size: 12px; color: var(--text-2); margin-top: 3px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag { background: var(--surface-2); padding: 2px 8px; border-radius: 8px; font-size: 11px; }
+
+  /* Calendar */
+  .cal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+  .cal-grid .dow { font-size: 11px; color: var(--text-2); padding: 6px 0; }
+  .cal-grid .day {
+    aspect-ratio: 1; display: grid; place-items: center; border-radius: 10px;
+    font-size: 13px; cursor: pointer; position: relative;
+  }
+  .cal-grid .day.other { color: #c8c8d6; }
+  .cal-grid .day.today { background: var(--primary); color: #fff; font-weight: 700; }
+  .cal-grid .day.has-task::after {
+    content: ""; position: absolute; bottom: 4px; width: 4px; height: 4px;
+    border-radius: 50%; background: var(--primary);
+  }
+  .cal-grid .day.today.has-task::after { background: #fff; }
+
+  /* Sheet */
+  .sheet-backdrop {
+    position: fixed; inset: 0; background: rgba(20, 15, 50, .35);
+    opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 40;
+  }
+  .sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    background: var(--surface); border-radius: 22px 22px 0 0;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+    transform: translateY(100%); transition: transform .25s ease;
+    max-width: 480px; margin: 0 auto;
+  }
+  .sheet.open { transform: translateY(0); }
+  .sheet .handle { width: 40px; height: 4px; background: #ddd; border-radius: 99px; margin: 0 auto 14px; }
+
+  /* Tabs (bottom nav) */
+  .tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    max-width: 480px; margin: 0 auto;
+    background: rgba(255,255,255,.92); backdrop-filter: blur(12px);
+    border-top: 1px solid #eee;
+    display: flex; justify-content: space-around;
+    padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  }
+  .tabbar button {
+    background: none; border: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    font-size: 10px; color: var(--text-2); padding: 4px 14px;
+  }
+  .tabbar button.active { color: var(--primary); }
+  .tabbar .ico { font-size: 20px; line-height: 1; }
+
+  /* Utils */
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .stack > * + * { margin-top: 10px; }
+  .center { text-align: center; }
+  .emoji-lg { font-size: 44px; }
+  .pill { display: inline-flex; padding: 4px 10px; border-radius: 99px; font-size: 12px; background: var(--surface-2); }
+  .list-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f5; }
+  .list-item:last-child { border-bottom: none; }
+  .list-item .ico { width: 38px; height: 38px; border-radius: 12px; background: var(--surface-2); display: grid; place-items: center; font-size: 18px; }
+  .list-item .txt { flex: 1; }
+  .list-item .txt small { color: var(--text-2); display: block; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ 1. ONBOARDING ============ -->
+  <section class="scene active" id="scene-onboarding">
+    <div class="center" style="padding-top:40px">
+      <div class="emoji-lg">⏰</div>
+      <h2 style="margin:10px 0 4px">ДЕЛУ ВРЕМЯ</h2>
+      <p class="muted">Планируй. Фокусируйся. Успевай.</p>
+    </div>
+    <div style="margin-top:32px" class="card">
+      <h3>Привет!</h3>
+      <p class="muted" style="margin:0">Помогу не забыть важное и найти время на главное. Настроим всё за минуту.</p>
+    </div>
+    <div class="stack" style="margin-top:16px">
+      <button class="btn" data-go="scene-register">Начать</button>
+      <button class="btn secondary" data-go="scene-home">У меня уже есть аккаунт</button>
+    </div>
+  </section>
+
+  <!-- ============ 2. REGISTER ============ -->
+  <section class="scene" id="scene-register">
+    <div class="topbar">
+      <button class="back" data-go="scene-onboarding">←</button>
+      <h1>Регистрация</h1>
+    </div>
+    <div class="progress"><i style="width:20%"></i></div>
+    <div class="card">
+      <div class="field"><label>Имя</label><input class="input" placeholder="Как вас зовут?" /></div>
+      <div class="field"><label>Email</label><input class="input" type="email" placeholder="you@example.com" /></div>
+      <div class="field"><label>Пароль</label><input class="input" type="password" placeholder="••••••••" /></div>
+      <button class="btn" data-go="scene-welcome">Зарегистрироваться</button>
+    </div>
+    <p class="center muted">Уже есть аккаунт? <a href="#" data-go="scene-home" style="color:var(--primary)">Войти</a></p>
+  </section>
+
+  <!-- ============ 3. WELCOME / PLANS ============ -->
+  <section class="scene" id="scene-welcome">
+    <div class="topbar">
+      <button class="back" data-go="scene-register">←</button>
+      <h1>Добро пожаловать</h1>
+    </div>
+    <div class="card soft">
+      <h3>Привет! Какие планы на сегодня?</h3>
+      <p class="muted" style="margin:0">Выберите, с чего начнём.</p>
+    </div>
+    <div class="stack" style="margin-top:16px">
+      <button class="btn secondary" data-go="scene-new-task">➕ Записать новую задачу</button>
+      <button class="btn secondary" data-go="scene-calendar">📅 Посмотреть календарь</button>
+      <button class="btn" data-go="scene-home">Перейти на главную</button>
+    </div>
+  </section>
+
+  <!-- ============ 4. NEW TASK ============ -->
+  <section class="scene" id="scene-new-task">
+    <div class="topbar">
+      <button class="back" data-go="scene-welcome">←</button>
+      <h1>Новая задача</h1>
+    </div>
+    <div class="card">
+      <div class="field"><label>Название</label><input class="input" id="nt-title" placeholder="Что нужно сделать?" /></div>
+      <div class="field"><label>Описание</label><textarea rows="3" id="nt-desc" placeholder="Детали (необязательно)"></textarea></div>
+      <div class="row">
+        <div class="field" style="flex:1"><label>Дата</label><input class="input" type="date" id="nt-date" /></div>
+        <div class="field" style="flex:1"><label>Время</label><input class="input" type="time" id="nt-time" /></div>
+      </div>
+      <div class="field"><label>Приоритет</label>
+        <select class="input" id="nt-prio">
+          <option>Низкий</option><option selected>Средний</option><option>Высокий</option>
+        </select>
+      </div>
+      <button class="btn" id="nt-save">Сохранить задачу</button>
+    </div>
+  </section>
+
+  <!-- ============ 5. HOME ============ -->
+  <section class="scene" id="scene-home">
+    <div class="topbar">
+      <h1>Твой план на сегодня</h1>
+      <div class="avatar">В</div>
+    </div>
+    <div class="card soft">
+      <div class="row">
+        <div>
+          <div class="muted">Сегодня, 18 октября</div>
+          <h3 style="margin:4px 0 0" id="home-date">Добрый день!</h3>
+        </div>
+        <div class="emoji-lg">📋</div>
+      </div>
+    </div>
+
+    <h3 style="margin:18px 0 10px">Задачи</h3>
+    <div id="task-list"></div>
+
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn secondary" data-go="scene-new-task">➕ Задача</button>
+      <button class="btn secondary" data-go="scene-calendar">📅 Календарь</button>
+    </div>
+  </section>
+
+  <!-- ============ 6. CALENDAR ============ -->
+  <section class="scene" id="scene-calendar">
+    <div class="topbar">
+      <button class="back" data-go="scene-home">←</button>
+      <h1>Календарь</h1>
+    </div>
+    <div class="card">
+      <div class="cal-head">
+        <button class="btn ghost" id="cal-prev" style="width:auto;padding:6px 10px">‹</button>
+        <strong id="cal-month">Октябрь 2025</strong>
+        <button class="btn ghost" id="cal-next" style="width:auto;padding:6px 10px">›</button>
+      </div>
+      <div class="cal-grid" id="cal-dow">
+        <div class="dow">Пн</div><div class="dow">Вт</div><div class="dow">Ср</div>
+        <div class="dow">Чт</div><div class="dow">Пт</div><div class="dow">Сб</div><div class="dow">Вс</div>
+      </div>
+      <div class="cal-grid" id="cal-days" style="margin-top:4px"></div>
+    </div>
+    <button class="btn" data-go="scene-new-task">➕ Добавить задачу</button>
+  </section>
+
+  <!-- ============ 7. TASK DETAIL (bottom sheet) ============ -->
+  <div class="sheet-backdrop" id="sheet-bg"></div>
+  <div class="sheet" id="sheet-task">
+    <div class="handle"></div>
+    <div class="row" style="margin-bottom:10px">
+      <h3 id="st-title" style="margin:0">Задача</h3>
+      <button class="btn ghost" id="st-close" style="width:auto;padding:6px">✕</button>
+    </div>
+    <p class="muted" id="st-desc">Описание</p>
+    <div class="row" style="margin:14px 0">
+      <span class="pill" id="st-date">📅 Сегодня</span>
+      <span class="pill" id="st-prio">⚡ Средний</span>
+    </div>
+    <div class="stack">
+      <button class="btn" id="st-done">✓ Отметить выполненной</button>
+      <button class="btn secondary" id="st-edit">✎ Редактировать</button>
+      <button class="btn ghost" id="st-delete" style="color:var(--danger)">Удалить</button>
+    </div>
+  </div>
+
+  <!-- ============ 8. PROFILE ============ -->
+  <section class="scene" id="scene-profile">
+    <div class="topbar"><h1>Мой профиль</h1></div>
+    <div class="card center">
+      <div class="avatar" style="width:72px;height:72px;font-size:26px;margin:0 auto 10px">В</div>
+      <h3 style="margin:0">Пользователь</h3>
+      <div class="muted">user@example.com</div>
+    </div>
+    <div class="card">
+      <div class="list-item"><div class="ico">🔔</div><div class="txt">Уведомления<small>Напоминания о задачах</small></div><button class="btn ghost" style="width:auto;padding:6px">Вкл</button></div>
+      <div class="list-item"><div class="ico">🎨</div><div class="txt">Тема<small>Светлая</small></div><button class="btn ghost" style="width:auto;padding:6px">Изменить</button></div>
+      <div class="list-item"><div class="ico">🌐</div><div class="txt">Язык<small>Русский</small></div><button class="btn ghost" style="width:auto;padding:6px">Изменить</button></div>
+      <div class="list-item"><div class="ico">🔒</div><div class="txt">Конфиденциальность</div><button class="btn ghost" style="width:auto;padding:6px">›</button></div>
+    </div>
+    <button class="btn danger" data-go="scene-onboarding">Выйти</button>
+  </section>
+
+  <!-- ============ 9. STATS ============ -->
+  <section class="scene" id="scene-stats">
+    <div class="topbar"><h1>Статистика</h1></div>
+    <div class="card soft">
+      <div class="muted">Выполнено сегодня</div>
+      <h2 style="margin:6px 0 0" id="stats-done">0 / 0</h2>
+    </div>
+    <div class="card">
+      <h3>За последние 7 дней</h3>
+      <div id="stats-bars" style="display:flex;gap:8px;align-items:flex-end;height:120px;margin-top:10px"></div>
+    </div>
+  </section>
+
+  <!-- Bottom tabbar -->
+  <nav class="tabbar" id="tabbar">
+    <button data-go="scene-home" data-tab="home"><span class="ico">🏠</span>Главная</button>
+    <button data-go="scene-calendar" data-tab="calendar"><span class="ico">📅</span>Календарь</button>
+    <button data-go="scene-stats" data-tab="stats"><span class="ico">📊</span>Статистика</button>
+    <button data-go="scene-profile" data-tab="profile"><span class="ico">👤</span>Профиль</button>
+  </nav>
+
+</div>
+
+<script>
+/* ======================= State ======================= */
+const state = {
+  tasks: [
+    { id: 1, title: 'Проверить почту', desc: 'Ответить на важные письма', date: '2025-10-18', time: '09:00', prio: 'Средний', done: true },
+    { id: 2, title: 'Созвон с командой', desc: 'Обсудить спринт', date: '2025-10-18', time: '11:00', prio: 'Высокий', done: false },
+    { id: 3, title: 'Обед', desc: '', date: '2025-10-18', time: '13:00', prio: 'Низкий', done: false },
+    { id: 4, title: 'Пробежка', desc: '5 км в парке', date: '2025-10-18', time: '19:00', prio: 'Средний', done: false }
+  ],
+  currentTaskId: null,
+  calendarDate: new Date(2025, 9, 1) // Oct 2025
+};
+
+/* ======================= Router ======================= */
+const scenes = document.querySelectorAll('.scene');
+const tabbar = document.getElementById('tabbar');
+const tabbarScenes = ['scene-home','scene-calendar','scene-stats','scene-profile'];
+
+function go(id) {
+  scenes.forEach(s => s.classList.toggle('active', s.id === id));
+  const isTab = tabbarScenes.includes(id);
+  tabbar.style.display = isTab ? 'flex' : 'none';
+  document.querySelectorAll('#tabbar button').forEach(b => {
+    b.classList.toggle('active', b.dataset.go === id);
+  });
+  window.scrollTo(0,0);
+  if (id === 'scene-home') renderTasks();
+  if (id === 'scene-calendar') renderCalendar();
+  if (id === 'scene-stats') renderStats();
+}
+
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-go]');
+  if (el) { e.preventDefault(); go(el.dataset.go); }
+});
+
+/* ======================= Tasks ======================= */
+const taskList = document.getElementById('task-list');
+
+function todayStr() {
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+
+function renderTasks() {
+  const today = todayStr();
+  const todays = state.tasks.filter(t => t.date === today || !t.date);
+  if (!todays.length) {
+    taskList.innerHTML = `<div class="card center muted">Пока пусто. Добавьте первую задачу ✨</div>`;
+    return;
+  }
+  taskList.innerHTML = todays.map(t => `
+    <div class="task ${t.done ? 'done' : ''}" data-id="${t.id}">
+      <div class="check">${t.done ? '✓' : ''}</div>
+      <div style="flex:1">
+        <div class="title">${escapeHtml(t.title)}</div>
+        <div class="meta">
+          ${t.time ? `<span class="tag">🕐 ${t.time}</span>` : ''}
+          <span class="tag">${prioIcon(t.prio)} ${t.prio}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  taskList.querySelectorAll('.task').forEach(el => {
+    el.addEventListener('click', (ev) => {
+      if (ev.target.closest('.check')) {
+        const id = +el.dataset.id;
+        const t = state.tasks.find(x => x.id === id);
+        t.done = !t.done;
+        renderTasks();
+        if (navigator.vibrate) navigator.vibrate(8);
+      } else {
+        openTask(+el.dataset.id);
+      }
+    });
+  });
+}
+
+function prioIcon(p) {
+  return p === 'Высокий' ? '🔴' : p === 'Средний' ? '🟡' : '🟢';
+}
+
+function escapeHtml(s){return s.replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));}
+
+/* ======================= New task ======================= */
+document.getElementById('nt-save').addEventListener('click', () => {
+  const title = document.getElementById('nt-title').value.trim();
+  if (!title) return alert('Введите название задачи');
+  const date = document.getElementById('nt-date').value || todayStr();
+  state.tasks.push({
+    id: Date.now(),
+    title,
+    desc: document.getElementById('nt-desc').value.trim(),
+    date,
+    time: document.getElementById('nt-time').value,
+    prio: document.getElementById('nt-prio').value,
+    done: false
+  });
+  document.getElementById('nt-title').value = '';
+  document.getElementById('nt-desc').value = '';
+  document.getElementById('nt-date').value = '';
+  document.getElementById('nt-time').value = '';
+  go('scene-home');
+});
+
+/* ======================= Calendar ======================= */
+const calDays = document.getElementById('cal-days');
+const calMonth = document.getElementById('cal-month');
+
+function renderCalendar() {
+  const d = state.calendarDate;
+  const year = d.getFullYear(), month = d.getMonth();
+  calMonth.textContent = d.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+
+  const first = new Date(year, month, 1);
+  let startDow = (first.getDay() + 6) % 7; // Mon=0
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevDays = new Date(year, month, 0).getDate();
+
+  const today = new Date();
+  const isCurrent = today.getFullYear()===year && today.getMonth()===month;
+
+  let html = '';
+  for (let i = startDow - 1; i >= 0; i--) {
+    html += `<div class="day other">${prevDays - i}</div>`;
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    const isToday = isCurrent && today.getDate() === day;
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const hasTask = state.tasks.some(t => t.date === dateStr);
+    html += `<div class="day ${isToday?'today':''} ${hasTask?'has-task':''}" data-date="${dateStr}">${day}</div>`;
+  }
+  calDays.innerHTML = html;
+
+  calDays.querySelectorAll('.day[data-date]').forEach(el => {
+    el.addEventListener('click', () => {
+      const ds = el.dataset.date;
+      const tasks = state.tasks.filter(t => t.date === ds);
+      if (tasks.length) openTask(tasks[0].id);
+    });
+  });
+}
+
+document.getElementById('cal-prev').onclick = () => {
+  state.calendarDate = new Date(state.calendarDate.getFullYear(), state.calendarDate.getMonth()-1, 1);
+  renderCalendar();
+};
+document.getElementById('cal-next').onclick = () => {
+  state.calendarDate = new Date(state.calendarDate.getFullYear(), state.calendarDate.getMonth()+1, 1);
+  renderCalendar();
+};
+
+/* ======================= Sheet ======================= */
+const sheet = document.getElementById('sheet-task');
+const bg = document.getElementById('sheet-bg');
+function openSheet(){ sheet.classList.add('open'); bg.classList.add('open'); }
+function closeSheet(){ sheet.classList.remove('open'); bg.classList.remove('open'); }
+document.getElementById('st-close').onclick = closeSheet;
+bg.onclick = closeSheet;
+
+function openTask(id) {
+  const t = state.tasks.find(x => x.id === id);
+  if (!t) return;
+  state.currentTaskId = id;
+  document.getElementById('st-title').textContent = t.title;
+  document.getElementById('st-desc').textContent = t.desc || 'Без описания';
+  document.getElementById('st-date').textContent = '📅 ' + (t.date || 'Без даты') + (t.time ? ' · ' + t.time : '');
+  document.getElementById('st-prio').textContent = prioIcon(t.prio) + ' ' + t.prio;
+  openSheet();
+}
+
+document.getElementById('st-done').onclick = () => {
+  const t = state.tasks.find(x => x.id === state.currentTaskId);
+  if (t) { t.done = true; renderTasks(); }
+  closeSheet();
+};
+document.getElementById('st-delete').onclick = () => {
+  state.tasks = state.tasks.filter(x => x.id !== state.currentTaskId);
+  renderTasks(); closeSheet();
+};
+document.getElementById('st-edit').onclick = () => {
+  const t = state.tasks.find(x => x.id === state.currentTaskId);
+  if (!t) return;
+  document.getElementById('nt-title').value = t.title;
+  document.getElementById('nt-desc').value = t.desc;
+  document.getElementById('nt-date').value = t.date;
+  document.getElementById('nt-time').value = t.time;
+  document.getElementById('nt-prio').value = t.prio;
+  state.tasks = state.tasks.filter(x => x.id !== state.currentTaskId);
+  closeSheet();
+  go('scene-new-task');
+};
+
+/* ======================= Stats ======================= */
+function renderStats() {
+  const total = state.tasks.length;
+  const done = state.tasks.filter(t => t.done).length;
+  document.getElementById('stats-done').textContent = `${done} / ${total}`;
+  const bars = document.getElementById('stats-bars');
+  const vals = [3,5,2,6,4,7,done];
+  const max = Math.max(...vals, 1);
+  bars.innerHTML = vals.map((v,i) => `
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <div style="width:100%;background:var(--primary-soft);border-radius:8px;height:${(v/max)*100}px;position:relative">
+        <div style="position:absolute;bottom:0;left:0;right:0;height:100%;background:var(--primary);border-radius:8px;opacity:${i===vals.length-1?1:.55}"></div>
+      </div>
+      <small class="muted">${['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][i]}</small>
+    </div>
+  `).join('');
+}
+
+/* ======================= Init ======================= */
+document.getElementById('nt-date').value = todayStr();
+document.getElementById('home-date').textContent = new Date().toLocaleDateString('ru-RU', { weekday:'long', day:'numeric', month:'long' });
+
+// Telegram Mini App
+if (window.Telegram?.WebApp) {
+  const tg = window.Telegram.WebApp;
+  tg.ready();
+  tg.expand();
+  try { tg.setHeaderColor('#f4f4f8'); tg.setBackgroundColor('#f4f4f8'); } catch(e){}
+}
+
+go('scene-onboarding');
+</script>
+</body>
+</html>
